@@ -1,18 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Initialize Firebase
-    const firebaseConfig = {
-    apiKey: "AIzaSyBh_D-Si856AUMANrMHcZbGn7fAhftjMvQ",
-    authDomain: "time-controler.firebaseapp.com",
-    projectId: "time-controler",
-    storageBucket: "time-controler.appspot.com",
-    messagingSenderId: "510270938510",
-    appId: "1:510270938510:web:bf02057564bab436ef98df",
-    measurementId: "G-N2EJ70BX1S"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
     // Create and append styles
     const style = document.createElement('style');
     style.innerHTML = `
@@ -192,15 +178,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .close:hover {
             color: #000;
         }
-        #authForm {
-            margin-bottom: 20px;
-        }
-        #authForm input {
-            margin: 5px 0;
-        }
-        #authForm button {
-            width: 100%;
-        }
     `;
     document.head.appendChild(style);
 
@@ -209,51 +186,43 @@ document.addEventListener('DOMContentLoaded', function () {
     container.className = 'container';
     container.innerHTML = `
         <h1>專案計時器</h1>
-        <div id="authForm">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button id="loginBtn">登錄</button>
-            <button id="signupBtn">註冊</button>
+        <div class="input-group" id="projectNameGroup">
+            <label for="projectName">專案名稱：</label>
+            <input type="text" id="projectName" placeholder="輸入專案名稱">
         </div>
-        <div id="app" style="display:none;">
-            <div class="input-group" id="projectNameGroup">
-                <label for="projectName">專案名稱：</label>
-                <input type="text" id="projectName" placeholder="輸入專案名稱">
-            </div>
-            <div class="input-group">
-                <label for="taskName">任務名稱：</label>
-                <input type="text" id="taskName" placeholder="輸入任務名稱">
-            </div>
-            <div class="input-group">
-                <label for="plannedHours">預計時間（小時）：</label>
-                <input type="number" id="plannedHours" placeholder="輸入預計時間（小時）" min="1" max="24">
-            </div>
-            <div class="button-group">
-                <button id="startBtn">開始</button>
-                <button id="pauseBtn" disabled>暫停</button>
-                <button id="endBtn" disabled>結算</button>
-            </div>
-            <div id="timer">00:00:00</div>
-            <table id="recordTable">
-                <thead>
-                    <tr>
-                        <th>任務名稱</th>
-                        <th>開始時間</th>
-                        <th>結束時間</th>
-                        <th>持續時間</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <button id="exportBtn">導出 CSV</button>
+        <div class="input-group">
+            <label for="taskName">任務名稱：</label>
+            <input type="text" id="taskName" placeholder="輸入任務名稱">
+        </div>
+        <div class="input-group">
+            <label for="plannedHours">預計時間（小時）：</label>
+            <input type="number" id="plannedHours" placeholder="輸入預計時間（小時）" min="1" max="24">
+        </div>
+        <div class="button-group">
+            <button id="startBtn">開始</button>
+            <button id="pauseBtn" disabled>暫停</button>
+            <button id="endBtn" disabled>結算</button>
+        </div>
+        <div id="timer">00:00:00</div>
+        <table id="recordTable">
+            <thead>
+                <tr>
+                    <th>任務名稱</th>
+                    <th>開始時間</th>
+                    <th>結束時間</th>
+                    <th>持續時間</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <button id="exportBtn">導出 CSV</button>
 
-            <div id="nameModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2>為這段時間命名</h2>
-                    <input type="text" id="segmentName" placeholder="輸入名稱">
-                    <button id="saveSegmentName">保存</button>
-                </div>
+        <div id="nameModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>為這段時間命名</h2>
+                <input type="text" id="segmentName" placeholder="輸入名稱">
+                <button id="saveSegmentName">保存</button>
             </div>
         </div>
     `;
@@ -266,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let isPaused = false;
     let records = [];
     let projectName = '';
-    let currentUser = null;
 
     const projectNameInput = document.getElementById('projectName');
     const projectNameGroup = document.getElementById('projectNameGroup');
@@ -282,54 +250,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const segmentNameInput = document.getElementById('segmentName');
     const saveSegmentNameBtn = document.getElementById('saveSegmentName');
     const closeModal = document.querySelector('.close');
-    const authForm = document.getElementById('authForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const signupBtn = document.getElementById('signupBtn');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const appDiv = document.getElementById('app');
 
-    // Event listeners
-    loginBtn.addEventListener('click', loginUser);
-    signupBtn.addEventListener('click', signupUser);
     startBtn.addEventListener('click', startTimer);
     pauseBtn.addEventListener('click', pauseTimer);
     endBtn.addEventListener('click', endTimer);
     exportBtn.addEventListener('click', exportToCSV);
     saveSegmentNameBtn.addEventListener('click', saveSegmentName);
     closeModal.addEventListener('click', () => nameModal.style.display = 'none');
-
-    // Firebase auth state listener
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            authForm.style.display = 'none';
-            appDiv.style.display = 'block';
-            loadRecords();
-        } else {
-            currentUser = null;
-            authForm.style.display = 'block';
-            appDiv.style.display = 'none';
-        }
-    });
-
-    function loginUser() {
-        const email = emailInput.value;
-        const password = passwordInput.value;
-        auth.signInWithEmailAndPassword(email, password)
-            .catch(error => {
-                console.error("Login error: ", error);
-            });
-    }
-
-    function signupUser() {
-        const email = emailInput.value;
-        const password = passwordInput.value;
-        auth.createUserWithEmailAndPassword(email, password)
-            .catch(error => {
-                console.error("Signup error: ", error);
-            });
-    }
 
     function startTimer() {
         if (!isRunning) {
@@ -375,15 +302,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function saveSegmentName() {
         const segmentName = segmentNameInput.value || '未命名任務';
-        const record = {
+        records.push({
             project: projectName,
             name: segmentName,
             start: new Date(Date.now() - remainingTime * 1000).toLocaleString(),
             end: new Date().toLocaleString(),
             duration: formatTime(plannedHoursInput.value * 60 * 60 - remainingTime)
-        };
-        records.push(record);
-        saveRecords();
+        });
         updateTable();
         nameModal.style.display = 'none';
     }
@@ -434,32 +359,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         saveAs(blob, `${projectName}_任務記錄.csv`);
-    }
-
-    function saveRecords() {
-        if (currentUser) {
-            db.collection('users').doc(currentUser.uid).set({
-                records: records
-            }, { merge: true });
-        } else {
-            localStorage.setItem('timerRecords', JSON.stringify(records));
-        }
-    }
-
-    function loadRecords() {
-        if (currentUser) {
-            db.collection('users').doc(currentUser.uid).get().then(doc => {
-                if (doc.exists) {
-                    records = doc.data().records || [];
-                    updateTable();
-                }
-            });
-        } else {
-            const storedRecords = localStorage.getItem('timerRecords');
-            if (storedRecords) {
-                records = JSON.parse(storedRecords);
-                updateTable();
-            }
-        }
     }
 });
