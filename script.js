@@ -235,7 +235,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let isPaused = false;
     let records = [];
     let projectName = '';
-    let startTime;
+    let startTime; // 記錄開始時間
+    let endTime; // 記錄結束時間
 
     const projectNameInput = document.getElementById('projectName');
     const projectNameGroup = document.getElementById('projectNameGroup');
@@ -295,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
             isPaused = true;
             startBtn.disabled = false;
             pauseBtn.disabled = true;
+            endTime = Date.now(); // 记录结束时间
         }
         nameModal.style.display = 'block';
         segmentNameInput.value = taskNameInput.value || '未命名任務';
@@ -302,7 +304,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function saveSegmentName() {
         const segmentName = segmentNameInput.value || '未命名任務';
-        const endTime = Date.now();
         const duration = formatTime(Math.round((endTime - startTime) / 1000));  // 计算持续时间
         records.push({
             project: projectName,
