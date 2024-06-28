@@ -208,8 +208,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <thead>
                 <tr>
                     <th>任務名稱</th>
-                    <th>開始時間</th>
                     <th>結束時間</th>
+                    <th>開始時間</th>
                     <th>持續時間</th>
                 </tr>
             </thead>
@@ -235,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let isPaused = false;
     let records = [];
     let projectName = '';
-    let startTime;
 
     const projectNameInput = document.getElementById('projectName');
     const projectNameGroup = document.getElementById('projectNameGroup');
@@ -267,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (!isPaused) {
                 remainingTime = plannedHoursInput.value * 60 * 60;
-                startTime = Date.now();  // 记录开始时间
             }
             timer = setInterval(updateTimer, 1000);
             isRunning = true;
@@ -296,20 +294,20 @@ document.addEventListener('DOMContentLoaded', function () {
             startBtn.disabled = false;
             pauseBtn.disabled = true;
         }
+        const endTime = new Date();
+        const duration = formatTime(plannedHoursInput.value * 60 * 60 - remainingTime);
         nameModal.style.display = 'block';
         segmentNameInput.value = taskNameInput.value || '未命名任務';
     }
 
     function saveSegmentName() {
         const segmentName = segmentNameInput.value || '未命名任務';
-        const endTime = Date.now();
-        const duration = formatTime(Math.round((endTime - startTime) / 1000));  // 计算持续时间
         records.push({
             project: projectName,
             name: segmentName,
-            start: new Date(startTime).toLocaleString(),
-            end: new Date(endTime).toLocaleString(),
-            duration: duration
+            start: new Date(Date.now() - remainingTime * 1000).toLocaleString(),
+            end: new Date().toLocaleString(),
+            duration: formatTime(plannedHoursInput.value * 60 * 60 - remainingTime)
         });
         updateTable();
         nameModal.style.display = 'none';
