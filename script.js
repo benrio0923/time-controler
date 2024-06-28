@@ -251,6 +251,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveSegmentNameBtn = document.getElementById('saveSegmentName');
     const closeModal = document.querySelector('.close');
 
+    // Load records from localStorage
+    loadRecords();
+
     startBtn.addEventListener('click', startTimer);
     pauseBtn.addEventListener('click', pauseTimer);
     endBtn.addEventListener('click', endTimer);
@@ -302,13 +305,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function saveSegmentName() {
         const segmentName = segmentNameInput.value || '未命名任務';
-        records.push({
+        const record = {
             project: projectName,
             name: segmentName,
             start: new Date(Date.now() - remainingTime * 1000).toLocaleString(),
             end: new Date().toLocaleString(),
             duration: formatTime(plannedHoursInput.value * 60 * 60 - remainingTime)
-        });
+        };
+        records.push(record);
+        saveRecords();
         updateTable();
         nameModal.style.display = 'none';
     }
@@ -359,5 +364,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         saveAs(blob, `${projectName}_任務記錄.csv`);
+    }
+
+    function saveRecords() {
+        localStorage.setItem('timerRecords', JSON.stringify(records));
+    }
+
+    function loadRecords() {
+        const storedRecords = localStorage.getItem('timerRecords');
+        if (storedRecords) {
+            records = JSON.parse(storedRecords);
+            updateTable();
+        }
     }
 });
