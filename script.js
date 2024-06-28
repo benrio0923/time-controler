@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const container = document.createElement('div');
     container.className = 'container';
     container.innerHTML = `
-        <h1>專案計時器</h1>
+        <h1 anijs="if: load, on: window, do: fadeIn animated">專案計時器</h1>
         <div class="input-group" id="projectNameGroup">
             <label for="projectName">專案名稱：</label>
             <input type="text" id="projectName" placeholder="輸入專案名稱">
@@ -199,30 +199,30 @@ document.addEventListener('DOMContentLoaded', function () {
             <input type="number" id="plannedHours" placeholder="輸入預計時間（小時）" min="1" max="24">
         </div>
         <div class="button-group">
-            <button id="startBtn">開始</button>
-            <button id="pauseBtn" disabled>暫停</button>
-            <button id="endBtn" disabled>結算</button>
+            <button id="startBtn" anijs="if: mouseover, do: rubberBand animated">開始</button>
+            <button id="pauseBtn" disabled anijs="if: mouseover, do: rubberBand animated">暫停</button>
+            <button id="endBtn" disabled anijs="if: mouseover, do: rubberBand animated">結算</button>
         </div>
-        <div id="timer">00:00:00</div>
+        <div id="timer" anijs="if: load, on: window, do: pulse animated">00:00:00</div>
         <table id="recordTable">
             <thead>
                 <tr>
                     <th>任務名稱</th>
-                    <th>結束時間</th>
                     <th>開始時間</th>
+                    <th>結束時間</th>
                     <th>持續時間</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
-        <button id="exportBtn">導出 CSV</button>
+        <button id="exportBtn" anijs="if: mouseover, do: bounce animated">導出 CSV</button>
 
         <div id="nameModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
+            <div class="modal-content" anijs="if: load, on: window, do: bounceIn animated">
+                <span class="close" anijs="if: mouseover, do: tada animated">&times;</span>
                 <h2>為這段時間命名</h2>
                 <input type="text" id="segmentName" placeholder="輸入名稱">
-                <button id="saveSegmentName">保存</button>
+                <button id="saveSegmentName" anijs="if: mouseover, do: rubberBand animated">保存</button>
             </div>
         </div>
     `;
@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let isPaused = false;
     let records = [];
     let projectName = '';
+    let startTime;
 
     const projectNameInput = document.getElementById('projectName');
     const projectNameGroup = document.getElementById('projectNameGroup');
@@ -266,6 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (!isPaused) {
                 remainingTime = plannedHoursInput.value * 60 * 60;
+                startTime = Date.now();  // 记录开始时间
             }
             timer = setInterval(updateTimer, 1000);
             isRunning = true;
@@ -294,20 +296,20 @@ document.addEventListener('DOMContentLoaded', function () {
             startBtn.disabled = false;
             pauseBtn.disabled = true;
         }
-        const endTime = new Date();
-        const duration = formatTime(plannedHoursInput.value * 60 * 60 - remainingTime);
         nameModal.style.display = 'block';
         segmentNameInput.value = taskNameInput.value || '未命名任務';
     }
 
     function saveSegmentName() {
         const segmentName = segmentNameInput.value || '未命名任務';
+        const endTime = Date.now();
+        const duration = formatTime(Math.round((endTime - startTime) / 1000));  // 计算持续时间
         records.push({
             project: projectName,
             name: segmentName,
-            start: new Date(Date.now() - remainingTime * 1000).toLocaleString(),
-            end: new Date().toLocaleString(),
-            duration: formatTime(plannedHoursInput.value * 60 * 60 - remainingTime)
+            start: new Date(startTime).toLocaleString(),
+            end: new Date(endTime).toLocaleString(),
+            duration: duration
         });
         updateTable();
         nameModal.style.display = 'none';
